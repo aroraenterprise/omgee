@@ -1,36 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/nav_drawer"
-    android:fitsSystemWindows="true">
-    <!-- your content layout -->
+    android:orientation="vertical">
+    <include layout="@layout/toolbar" />
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:layout_gravity="center"
+        android:id="@+id/progress"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/nav_contentframe"
+        android:id="@+id/ll_dashboard"
         android:orientation="vertical">
-        <include layout="@layout/toolbar" />
-        <ProgressBar
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:indeterminate="true"
-            android:layout_gravity="center"
-            android:id="@+id/progress"/>
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/nav_content">
-        </FrameLayout>
-    </LinearLayout>
+            android:text="WELCOME TO DASHBOARD"
+            android:id="@+id/txt_band_info"/>
 
-    <android.support.design.widget.NavigationView
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:fitsSystemWindows="true"
-        android:id="@+id/nav_view"
-        app:headerLayout="@layout/drawer_header"
-        app:menu="@menu/menu_drawer" />
-</android.support.v4.widget.DrawerLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/txt_heart_rate"
+            android:text="78"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start HR Monitor"
+            android:id="@+id/btn_start" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Stop HR Monitor"
+            android:id="@+id/btn_stop" />
+    </LinearLayout>
+</LinearLayout>
