@@ -43,14 +43,9 @@ public class BaseSocketActivity extends Activity {
             mSocket.disconnect();
     }
 
-    public void sendData() {
-        mSocket.emit("echo", "hello world");
-    }
-
-    public void sendJsonData(JSONObject data){
+    public void sendJsonData(String event, JSONObject data){
         if (mSocket.connected()){
-            Log.d(TAG, "socket connection open");
-            mSocket.emit("echo", data);
+            mSocket.emit(event, data);
         }
     }
 

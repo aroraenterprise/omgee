@@ -1,5 +1,6 @@
 package com.sajarora.omgee;
 
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -30,6 +31,10 @@ import org.json.JSONObject;
 public class MainActivity extends BaseSocketActivity implements View.OnClickListener, HeartRateConsentListener, IBandCallbacks {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String SOCKET_USERNAME = "username";
+    private static final String SOCKET_HEARTRATE = "heartrate";
+    private static final String SOCKET_TIMESTAMP = "timestamp";
+    private static final String SOCKET_SENSOR_HEARTRATE = "sensorHeartrate";
     private Toolbar mToolbar;
 
     private BandClient mBandClient;
@@ -39,6 +44,8 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
     private TextView mTextBandInfo;
     private TextView mTextHeartRate;
     private MyBandHeartRateListener mBandListener;
+    private JSONObject mJsonData;
+    private boolean isMonitoring;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,16 +102,6 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
         }
     }
 
-    @Override
-    public void updateHR(final float heartRate) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                mTextHeartRate.setText("HR: " + heartRate);
-            }
-        });
-    }
-
     // create a heart rate event listener -> subscribes to events
     private class MyBandHeartRateListener implements BandHeartRateEventListener {
         private final IBandCallbacks mCallbacks;
@@ -117,16 +114,18 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
         public void onBandHeartRateChanged(BandHeartRateEvent event) {
             // do work on heart rate changed (i.e., update UI)
             Log.d(TAG, "HR: " + event.getHeartRate());
-            mCallbacks.updateHR(event.getHeartRate());
+            mCallbacks.updateHR(event.getHeartRate(), event.getTimestamp());
         }
     };
 
     //Stops the HR monitoring
     private void stopHRMonitor() {
+        isMonitoring = false;
         mTextBandInfo.setText("HR Monitoring Stopped.");
         try {
             // unregister the listener
             mBandClient.getSensorManager().unregisterHeartRateEventListener(mBandListener);
+            mBandListener = null;
         } catch(BandIOException ex) {
             Log.d(TAG, ex.getMessage());
         }
@@ -134,20 +133,13 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
 
     //Starts HR monitoring
     private void startHRMonitor() {
-        if (getSocket() != null){
-            JSONObject obj = new JSONObject();
-            String username;
-            try {
-                obj.put("username", "keon");
-            } catch (JSONException e) {
-                return;
-            }
-            sendJsonData(obj);
-        }
-        else {
-            Snackbar.make(mLLDashboard, "Socket not initialized.", Snackbar.LENGTH_SHORT).show();
+        if (getSocket() == null){
+            Snackbar.make(mLLDashboard, "Backend connection not open.", Snackbar.LENGTH_SHORT).show();
             return;
         }
+
+        isMonitoring = true;
+        mJsonData = new JSONObject();
 
         mBandListener = new MyBandHeartRateListener(this);
         checkForConsent();
@@ -157,6 +149,27 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
             mBandClient.getSensorManager().registerHeartRateEventListener(
                     mBandListener);
         } catch (BandException ex) {
+            Log.d(TAG, ex.getMessage());
+        }
+    }
+
+    @Override
+    public void updateHR(final float heartRate, long timestamp) {
+        if (!isMonitoring)
+            return;
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mTextHeartRate.setText("HR: " + heartRate);
+            }
+        });
+        try {
+            mJsonData.put(SOCKET_USERNAME, MainApplication.getInstance().getUser().username);
+            mJsonData.put(SOCKET_HEARTRATE, heartRate);
+            mJsonData.put(SOCKET_TIMESTAMP, timestamp);
+            sendJsonData(SOCKET_SENSOR_HEARTRATE, mJsonData);
+        } catch(JSONException ex){
             Log.d(TAG, ex.getMessage());
         }
     }
@@ -229,6 +242,10 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
 
         switch (item.getItemId()) {
             case R.id.action_settings:
+                return true;
+            case R.id.action_logout:
+                MainApplication.getInstance().setUser(null);
+                startActivity(new Intent(this , LoginActivity.class));
                 return true;
         }
         return super.onOptionsItemSelected(item);
