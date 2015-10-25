@@ -1,6 +1,5 @@
 package com.sajarora.omgee;
 
-import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
@@ -25,7 +24,10 @@ import com.microsoft.band.sensors.BandHeartRateEvent;
 import com.microsoft.band.sensors.BandHeartRateEventListener;
 import com.microsoft.band.sensors.HeartRateConsentListener;
 
-public class MainActivity extends Activity implements View.OnClickListener, HeartRateConsentListener, IBandCallbacks {
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class MainActivity extends BaseSocketActivity implements View.OnClickListener, HeartRateConsentListener, IBandCallbacks {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private Toolbar mToolbar;
@@ -132,6 +134,21 @@ public class MainActivity extends Activity implements View.OnClickListener, Hear
 
     //Starts HR monitoring
     private void startHRMonitor() {
+        if (getSocket() != null){
+            JSONObject obj = new JSONObject();
+            String username;
+            try {
+                obj.put("username", "keon");
+            } catch (JSONException e) {
+                return;
+            }
+            sendJsonData(obj);
+        }
+        else {
+            Snackbar.make(mLLDashboard, "Socket not initialized.", Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+
         mBandListener = new MyBandHeartRateListener(this);
         checkForConsent();
         mTextBandInfo.setText("HR Monitoring Started...");
