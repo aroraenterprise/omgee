@@ -7,7 +7,7 @@ public class OmgeeCheckin {
     public String value;
     public Long timestamp;
 
-    public static final String CHECK_IN = "postCheckin";
+    public static final String CHECK_IN = "checkin";
     public static final String CHECK_OUT = "checkout";
 
 
