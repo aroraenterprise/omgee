@@ -25,7 +25,7 @@ import com.microsoft.band.sensors.BandHeartRateEvent;
 import com.microsoft.band.sensors.BandHeartRateEventListener;
 import com.microsoft.band.sensors.HeartRateConsentListener;
 
-public class MainActivity extends Activity implements View.OnClickListener, HeartRateConsentListener {
+public class MainActivity extends Activity implements View.OnClickListener, HeartRateConsentListener, IBandCallbacks {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private Toolbar mToolbar;
@@ -36,6 +36,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Hear
     private LinearLayout mLLDashboard;
     private TextView mTextBandInfo;
     private TextView mTextHeartRate;
+    private MyBandHeartRateListener mBandListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,19 +93,38 @@ public class MainActivity extends Activity implements View.OnClickListener, Hear
         }
     }
 
+    @Override
+    public void updateHR(final float heartRate) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mTextHeartRate.setText("HR: " + heartRate);
+            }
+        });
+    }
+
     // create a heart rate event listener -> subscribes to events
-    BandHeartRateEventListener heartRateListener = new BandHeartRateEventListener() {
+    private class MyBandHeartRateListener implements BandHeartRateEventListener {
+        private final IBandCallbacks mCallbacks;
+
+        public MyBandHeartRateListener(IBandCallbacks callbacks){
+            this.mCallbacks = callbacks;
+        }
+
         @Override
         public void onBandHeartRateChanged(BandHeartRateEvent event) {
             // do work on heart rate changed (i.e., update UI)
+            Log.d(TAG, "HR: " + event.getHeartRate());
+            mCallbacks.updateHR(event.getHeartRate());
         }
     };
 
     //Stops the HR monitoring
     private void stopHRMonitor() {
+        mTextBandInfo.setText("HR Monitoring Stopped.");
         try {
             // unregister the listener
-            mBandClient.getSensorManager().unregisterHeartRateEventListener(heartRateListener);
+            mBandClient.getSensorManager().unregisterHeartRateEventListener(mBandListener);
         } catch(BandIOException ex) {
             Log.d(TAG, ex.getMessage());
         }
@@ -112,11 +132,13 @@ public class MainActivity extends Activity implements View.OnClickListener, Hear
 
     //Starts HR monitoring
     private void startHRMonitor() {
+        mBandListener = new MyBandHeartRateListener(this);
         checkForConsent();
+        mTextBandInfo.setText("HR Monitoring Started...");
         try {
             // register the listener
             mBandClient.getSensorManager().registerHeartRateEventListener(
-                    heartRateListener);
+                    mBandListener);
         } catch (BandException ex) {
             Log.d(TAG, ex.getMessage());
         }
