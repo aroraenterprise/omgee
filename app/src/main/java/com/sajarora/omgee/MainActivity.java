@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -24,9 +25,15 @@ import com.microsoft.band.UserConsent;
 import com.microsoft.band.sensors.BandHeartRateEvent;
 import com.microsoft.band.sensors.BandHeartRateEventListener;
 import com.microsoft.band.sensors.HeartRateConsentListener;
+import com.sajarora.omgee.api.OmgeeApi;
+import com.sajarora.omgee.api.OmgeeCheckin;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.client.Response;
 
 public class MainActivity extends BaseSocketActivity implements View.OnClickListener, HeartRateConsentListener, IBandCallbacks {
 
@@ -40,12 +47,14 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
     private BandClient mBandClient;
 
     private ProgressBar mProgress;
-    private RelativeLayout mLLDashboard;
+    private RelativeLayout mRlDashboard;
     private TextView mTextBandInfo;
     private TextView mTextHeartRate;
     private MyBandHeartRateListener mBandListener;
     private JSONObject mJsonData;
     private boolean isMonitoring;
+    private boolean isCheckedIn = false;
+    private Button mButtonHeader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +70,41 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
 
         //enable band
         setUpBand();
+
+        //get check in status
+        getCheckinStatus();
+
+    }
+
+    private void getCheckinStatus() {
+        OmgeeApi.getInstance().service.getCheckin(MainApplication.getInstance().getUser().username,
+                new Callback<OmgeeCheckin>() {
+                    @Override
+                    public void success(OmgeeCheckin omgeeCheckin, Response response) {
+                        if (omgeeCheckin.value != null && omgeeCheckin.value.equals(OmgeeCheckin.CHECK_IN)) {
+                            isCheckedIn = true;
+                            startHRMonitor();
+                        }
+                        updateCheckin();
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Log.d(TAG, error.getMessage());
+                        updateCheckin();
+                    }
+                });
+    }
+
+    private void updateCheckin() {
+        int buttonStringId;
+        if (isCheckedIn){
+            buttonStringId = R.string.check_out;
+        } else {
+            buttonStringId = R.string.check_in;
+        }
+        mButtonHeader.setText(getResources().getString(buttonStringId));
+        mButtonHeader.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -69,13 +113,13 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
      */
     private void initViews() {
         mProgress = (ProgressBar) findViewById(R.id.progress);
-        mLLDashboard = (RelativeLayout) findViewById(R.id.rl_dashboard);
+        mRlDashboard = (RelativeLayout) findViewById(R.id.rl_dashboard);
         //make dashboard invisible until band is ready
-        mLLDashboard.setVisibility(View.GONE);
+        mRlDashboard.setVisibility(View.GONE);
         mTextBandInfo = (TextView)findViewById(R.id.txt_band_info);
         mTextHeartRate = (TextView)findViewById(R.id.txt_heart_rate);
-        findViewById(R.id.btn_start).setOnClickListener(this);
-        findViewById(R.id.btn_stop).setOnClickListener(this);
+        mButtonHeader = (Button)findViewById(R.id.btn_header);
+        mButtonHeader.setOnClickListener(this);
     }
 
     /**
@@ -93,13 +137,49 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
     @Override
     public void onClick(View v) {
         switch (v.getId()){
-            case R.id.btn_start:
-                startHRMonitor();
-                return;
-            case R.id.btn_stop:
-                stopHRMonitor();
+            case R.id.btn_header:
+                if (isCheckedIn)
+                    performCheckOut();
+                else
+                    performCheckin();
                 return;
         }
+    }
+
+    private void performCheckin() {
+        OmgeeApi.getInstance().service.postCheckin(MainApplication.getInstance().getUser().username,
+                new OmgeeCheckin(OmgeeCheckin.CHECK_IN), new Callback<OmgeeCheckin>() {
+                    @Override
+                    public void success(OmgeeCheckin omgeeCheckin, Response response) {
+                        Snackbar.make(mRlDashboard, "You are checked in.", Snackbar.LENGTH_SHORT).show();
+                        isCheckedIn = true;
+                        updateCheckin();
+                        startHRMonitor();
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Log.d(TAG, error.getMessage());
+                    }
+                });
+    }
+
+    private void performCheckOut() {
+        OmgeeApi.getInstance().service.postCheckin(MainApplication.getInstance().getUser().username,
+                new OmgeeCheckin(OmgeeCheckin.CHECK_OUT), new Callback<OmgeeCheckin>() {
+                    @Override
+                    public void success(OmgeeCheckin omgeeCheckin, Response response) {
+                        Snackbar.make(mRlDashboard, "You are checked out.", Snackbar.LENGTH_SHORT).show();
+                        isCheckedIn = false;
+                        updateCheckin();
+                        stopHRMonitor();
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Log.d(TAG, error.getMessage());
+                    }
+                });
     }
 
     // create a heart rate event listener -> subscribes to events
@@ -134,7 +214,7 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
     //Starts HR monitoring
     private void startHRMonitor() {
         if (getSocket() == null){
-            Snackbar.make(mLLDashboard, "Backend connection not open.", Snackbar.LENGTH_SHORT).show();
+            Snackbar.make(mRlDashboard, "Backend connection not open.", Snackbar.LENGTH_SHORT).show();
             return;
         }
 
@@ -154,24 +234,24 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
     }
 
     @Override
-    public void updateHR(final float heartRate, long timestamp) {
+    public void updateHR(final float heartRate, final long timestamp) {
         if (!isMonitoring)
             return;
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mTextHeartRate.setText("HR: " + heartRate);
+                mTextHeartRate.setText("" + heartRate);
+                try {
+                    mJsonData.put(SOCKET_USERNAME, MainApplication.getInstance().getUser().username);
+                    mJsonData.put(SOCKET_HEARTRATE, heartRate);
+                    mJsonData.put(SOCKET_TIMESTAMP, timestamp);
+                    sendJsonData(SOCKET_SENSOR_HEARTRATE, mJsonData);
+                } catch (JSONException ex) {
+                    Log.d(TAG, ex.getMessage());
+                }
             }
         });
-        try {
-            mJsonData.put(SOCKET_USERNAME, MainApplication.getInstance().getUser().username);
-            mJsonData.put(SOCKET_HEARTRATE, heartRate);
-            mJsonData.put(SOCKET_TIMESTAMP, timestamp);
-            sendJsonData(SOCKET_SENSOR_HEARTRATE, mJsonData);
-        } catch(JSONException ex){
-            Log.d(TAG, ex.getMessage());
-        }
     }
 
     private void checkForConsent() {
@@ -187,7 +267,7 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
 
     @Override
     public void userAccepted(boolean b) {
-        Snackbar.make(mLLDashboard, "HR monitoring is turned on.", Snackbar.LENGTH_SHORT).show();
+        Snackbar.make(mRlDashboard, "HR monitoring is turned on.", Snackbar.LENGTH_SHORT).show();
     }
 
     //Make a connection to one specific band (right now it is just the first band)
@@ -204,15 +284,15 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
                     if (state == ConnectionState.CONNECTED) {
                         return true;
                     } else {
-                        Snackbar.make(mLLDashboard, "No paired bands.", Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(mRlDashboard, "No paired bands.", Snackbar.LENGTH_SHORT).show();
                         return false;
                     }
                 } catch (InterruptedException | BandException ex) {
                     Log.d(TAG, ex.getMessage());
-                    Snackbar.make(mLLDashboard, "Failed to pair with band.", Snackbar.LENGTH_SHORT).show();
+                    Snackbar.make(mRlDashboard, "Failed to pair with band.", Snackbar.LENGTH_SHORT).show();
                 }
             } else {
-                Snackbar.make(mLLDashboard, "No paired bands.", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(mRlDashboard, "No paired bands.", Snackbar.LENGTH_SHORT).show();
             }
             return false;
         }
@@ -220,7 +300,7 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
         protected void onPostExecute(Boolean result) {
             mProgress.setVisibility(View.GONE);
             if (result){
-                mLLDashboard.setVisibility(View.VISIBLE);
+                mRlDashboard.setVisibility(View.VISIBLE);
             }
         }
     }

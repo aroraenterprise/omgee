@@ -7,4 +7,6 @@
     <string name="title_activity_login">LoginActivity</string>
     <string name="hint_username">Username</string>
     <string name="action_logout">Logout</string>
+    <string name="check_out">CHECK OUT</string>
+    <string name="check_in">CHECK IN</string>
 </resources>
