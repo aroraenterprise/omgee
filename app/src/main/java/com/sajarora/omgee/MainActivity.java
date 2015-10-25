@@ -8,8 +8,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toolbar;
 
@@ -40,7 +40,7 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
     private BandClient mBandClient;
 
     private ProgressBar mProgress;
-    private LinearLayout mLLDashboard;
+    private RelativeLayout mLLDashboard;
     private TextView mTextBandInfo;
     private TextView mTextHeartRate;
     private MyBandHeartRateListener mBandListener;
@@ -69,7 +69,7 @@ public class MainActivity extends BaseSocketActivity implements View.OnClickList
      */
     private void initViews() {
         mProgress = (ProgressBar) findViewById(R.id.progress);
-        mLLDashboard = (LinearLayout) findViewById(R.id.ll_dashboard);
+        mLLDashboard = (RelativeLayout) findViewById(R.id.rl_dashboard);
         //make dashboard invisible until band is ready
         mLLDashboard.setVisibility(View.GONE);
         mTextBandInfo = (TextView)findViewById(R.id.txt_band_info);

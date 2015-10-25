@@ -1,45 +1,116 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
     <include layout="@layout/toolbar" />
+
     <ProgressBar
+        android:layout_alignParentTop="true"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:indeterminate="true"
         android:layout_gravity="center"
         android:id="@+id/progress"/>
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/ll_dashboard"
-        android:orientation="vertical">
+        android:id="@+id/rl_dashboard"
+        android:layout_below="@+id/toolbar">
 
-        <TextView
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:src="@drawable/ic_background"
+            android:scaleType="centerCrop"
+            android:id="@+id/iv_background"/>
+
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/profile_image"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/ic_doctor"
+            app:civ_border_width="2dp"
+            app:civ_border_color="#FF000000"
+            android:layout_marginLeft="15dp"
+            android:layout_marginTop="15dp"/>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="WELCOME TO DASHBOARD"
-            android:id="@+id/txt_band_info"/>
+            android:orientation="vertical"
+            android:layout_marginLeft="10dp"
+            android:layout_toRightOf="@+id/profile_image"
+            android:layout_alignTop="@+id/profile_image">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/txt_heart_rate"
-            android:text="78"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textColor="@color/white"
+                android:text="Doctor's Appointment" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:textColor="@color/white"
+                android:text="Time: 11:30pm" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_margin="10dp"
+            android:background="@color/white"
+            android:id="@+id/view_line"
+            android:layout_below="@+id/profile_image"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Start HR Monitor"
-            android:id="@+id/btn_start" />
+            android:layout_below="@+id/view_line"
+            android:textColor="@color/white"
+            android:background="?android:attr/"
+            android:layout_alignParentRight="true"
+            android:text="Check In"/>
 
-        <Button
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Stop HR Monitor"
-            android:id="@+id/btn_stop" />
-    </LinearLayout>
-</LinearLayout>
+            android:layout_below="@+id/iv_background"
+            android:visibility="visible"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="WELCOME TO DASHBOARD"
+                android:id="@+id/txt_band_info"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/txt_heart_rate"
+                android:text="78"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Start HR Monitor"
+                android:id="@+id/btn_start" />
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stop HR Monitor"
+                android:id="@+id/btn_stop" />
+        </LinearLayout>
+
+    </RelativeLayout>
+</RelativeLayout>
